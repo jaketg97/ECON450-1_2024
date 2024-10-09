@@ -1,0 +1,181 @@
+\documentclass[12pt ]{article}
+\setlength{\textwidth}{14 true cm} \setlength{\textheight}{20 true cm}
+
+\usepackage{amscd,amsmath}
+\usepackage{enumerate}
+\usepackage{natbib}
+\bibliographystyle{chicago}
+
+\begin{document}
+
+\begin{center}
+\large
+Problem Set 4: Demand Estimation\\
+450-1
+ \end{center}
+
+\section*{Preface}
+
+ This problem set is designed to help you to understand the nuts and
+ bolts of discrete choice demand models and imperfect competition. In
+ this exercise, we will use simulated fake data so that you know the
+ true distributions and then we will try alternative approaches to
+ estimation. Please read the full problem set before starting, as it
+ may save some heart-ache. \textbf{The problem set is quite long and you should start working on this as soon as possible!}
+
+ In addition to the lecture slides, there are several papers which can serve as good resources for this PSET. Among them are \citet{dube_improving_2012}, which has good guidance on implementing the MPEC algorithm (note the appendix \citet{dube_online_2012}, which discusses the constraints Jacobian structure); \citet{conlon_best_2020}, which describes in detail the popular PyBLP package (note that this is a NFP paper, but it can still guide your MPEC creation); and \citet{nevo_practitioners_2000} (again note that this is a NFP paper). There will be small differences across the papers and between the papers and the lecture notes; for instance, the lecture notes optimize $\delta$ in their MPEC while \citet{dube_improving_2012} optimize $\xi$. \textbf{Make sure your code is internally consistent}; i.e. your objective function, constraints, gradient, and Jacobian all correspond. 
+
+ This problem set can be done in multiple programming languages (the most popular historically have been Julia, Matlab, Python, and R). Some students have also used this as a chance to familiarize themselves with Knitro. As specified below, whatever language/solver you use, \textbf{you have to provide a gradient and Jacobian}. 
+ 
+
+\section{Market Simulation}
+
+\subsection{Model}
+\subsubsection{Demand:}
+Consumers' preference for product $j$ and market $m$ is assumed to
+take the following form:
+
+\begin{align}
+U_{ijm} &=X_{jm} \beta - \alpha_i p_{jm} + \xi_{jm} + \epsilon_{ijm} \nonumber\\
+\alpha_i &= \alpha+\sigma_{\alpha} v_{ip}\nonumber\\
+U_{i0} &= 0
+\end{align}
+where the product characteristics are iid with distributions:
+\begin{itemize}
+\item $X_{jm}=(X_{1jm}, X_{2jm}, X_{3jm})$, with $X_{1jm}=1$ (a constant).
+\item $X_2\sim U[0,1]$ and $X_3\sim N(0,1)$
+\item $\xi_{jm}\sim N(0,1)$.
+\end{itemize}
+
+Similarly, the consumer taste shocks are iid with distributions
+\begin{itemize}
+\item $\nu_{ip}\sim LN(0,1)$, where LN is the lognormal distribution
+\item $\epsilon_{ijm}$ is drawn from type I extreme value distribution.
+\end{itemize}
+
+\subsubsection{Supply:}
+The marginal cost of producing product $j$ in market $m$ is given by:
+\begin{equation}
+MC_{jm}=\gamma_0+\gamma_1 W_{j}+\gamma_2Z_{jm} +\eta_{jm}
+\end{equation}
+where $W_j \sim N(0,1)$, $Z_{jm}\sim N(0,1)$ and $\eta_{jm} \sim
+N(0,1)$. All products are produced by single-product firms. The
+markets are regional, while the firms are national. Therefore, $W_j$
+is a common cost shifter for firm $j$ across all markets.
+
+\subsubsection{Parameters:}
+In the remainder of this problem set, you will estimate the demand parameters $\theta=\{ \beta, \alpha, \sigma_{\alpha}\}$, and the supply parameters $\gamma$.
+
+Let the true parameter values be:
+\begin{itemize}
+\item $\beta=(5,1,1)$
+\item $\alpha=1$ and $\sigma_{\alpha}=1$
+\item $(\gamma_0,\gamma_1, \gamma_2) = (2,1,1)$.
+\end{itemize}
+
+\subsection{Data}
+
+Provided in CSV files are the simulated markets, prices and market shares for three simulations (generated using the true parameters): 10 markets and 3 products, 100 markets and 3 products, 100 markets and 5 products. The data list observations at the product-market (jm) level. They are ordered in cycles of products within cycles of markets (product and market columns are also provided for clarity).
+
+\begin{enumerate}[1.]
+\item For each of these three simulations, compare the distribution of prices, profits and consumer surplus.  For consumer surplus, simulate draws of consumers from the true distribution and calculate their optimal purchasing decision and welfare. 
+\end{enumerate}
+
+\section{BLP and Hausman Instruments}
+
+Unless specified, use the dataset with $J=3$ and $M=100$ for the
+following exercises:
+
+\begin{enumerate}[1.]
+\item Consider the following set of moment conditions: $E[\xi|X]=0$ and
+  $E[\xi|p]=0$.
+  \begin{enumerate}
+  \item Using the $(J,M)=(3,200)$ dataset, compute the values of
+    $E[\xi_{jm}X_{jm}]$, $E[\xi_{jm}p_{jm}]$ and
+    $E[\xi_{jm}\bar{p}_{jm}]$, where $\bar{p}_{jm}$ is the average
+    price of products in the other markets.
+  \item Which of these moment conditions is valid? Which of them are relevant?
+    Why?
+  \item Can you use both BLP and Hausman instruments in this
+    setting? Why? Why not?
+  \end{enumerate}
+\item Estimate $\theta$ a.la. BLP, but using \emph{demand-side
+    moments only} i.e. $E[\xi|X]=0$ and writing the problem as an MPEC
+  \begin{enumerate}
+  \item Write down the BLP moments.
+  \item Construct your objective function.
+  \item Construct the constraints function.
+  \item Construct the gradient and Jacobian.
+  \item Try to estimate $\theta$ and the standard errors. Report the
+    estimates, bias and standard errors for each parameter.
+
+    Note: You should start the optimization routine at several
+    different starting values, and ensure that you are confident about
+    your results. Comment on which parameters appear to be most stable across
+    runs?
+      
+  \item Compute the price elasticity of demand at equilibrium prices,
+    profits and consumer surplus at the estimated parameters. Compare
+    with the true values.
+  \item Repeat the estimation for $M=10$. How do the estimates,
+    standard errors and stability of the optimization routine change?
+  \end{enumerate}
+\item Estimate $\theta$ a.la. BLP, but assuming incorrectly that $E[\xi|p]=0$
+  within each market. Compare the parameter estimates to the true
+  values and the ones obtained using BLP instruments. Comment.
+\end{enumerate}
+
+\section{Adding Supply-side}
+
+\begin{enumerate}
+\item Estimate $\theta$ assuming $E[\xi|X,W]=0$.
+  \begin{enumerate}
+  \item Write down the BLP moments, as well as a moment with the cost shifter $W$.
+  \item Estimate $\theta$ and the standard errors. Report the
+    estimates, bias and standard errors for each parameter. Compute
+    elasticity of demand at equilibrium prices, profits and consumer
+    surplus at the estimated parameters. Compare with the true values.
+  \item Repeat the estimation for $M=10$. How do the estimates,
+    standard errors and stability of the optimization routine change?
+  \item Compare the answers obtained here with the true values and the
+    estimates using the BLP instruments alone.
+  \end{enumerate}
+
+\item Estimating marginal costs.
+  \begin{enumerate}
+  \item Write down marginal costs under the three pricing assumptions:
+    1) perfect competition, 2) perfect collusion, and 3) oligopoly
+    (correct model).
+  \item Using your most preferred estimates so far, compute the
+    marginal costs. Comment on why you prefer these estimates. Compare
+    the marginal costs to the true marginal costs in the data.
+  \end{enumerate}
+\end{enumerate}
+
+\section{Bonus: Joint Estimation}
+
+Estimate $\theta$ and $\gamma$ jointly, assuming that
+  $E[\xi,\eta|X,W]=0$
+  
+\begin{enumerate}
+  \item Estimate the demand and supply parameters under 1) perfect competition, 2) perfect collusion, and 3) oligopoly (correct model). Comment on the estimates, standard errors, and demand elasticities at observed prices comparing them to previous estimates.
+\end{enumerate}
+
+
+\section{Bonus: Merger exercise}
+
+\begin{enumerate}
+\item Pick a set of parameter estimates that you trust the most for
+  the following exercises. Why do you prefer these over the others?
+\item Suppose firm 1 and firm 2 plan to merge.
+  \begin{enumerate}
+  \item Write down the merged firm's pricing problem.
+  \item Predict the new set of prices using \emph{estimated}
+    parameters. How does markup change?
+  \item Compare consumer surplus, prices and profits.
+  \end{enumerate}
+\end{enumerate}
+
+\bibliography{bib}
+
+\end{document}

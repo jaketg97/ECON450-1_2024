@@ -1,0 +1,256 @@
+\documentclass[12pt ]{article}
+%DIF LATEXDIFF DIFFERENCE FILE
+%DIF DEL PS4_original.tex   Wed Dec 13 19:10:31 2023
+%DIF ADD PS4_revised.tex    Fri Dec 22 10:17:39 2023
+\setlength{\textwidth}{14 true cm} \setlength{\textheight}{20 true cm}
+
+\usepackage{amscd,amsmath}
+\usepackage{enumerate}
+%DIF 6a6-7
+\usepackage{natbib} %DIF > 
+\bibliographystyle{chicago} %DIF > 
+%DIF -------
+
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+\providecommand{\DIFmodbegin}{} %DIF PREAMBLE
+\providecommand{\DIFmodend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+%DIF COLORLISTINGS PREAMBLE %DIF PREAMBLE
+\RequirePackage{listings} %DIF PREAMBLE
+\RequirePackage{color} %DIF PREAMBLE
+\lstdefinelanguage{DIFcode}{ %DIF PREAMBLE
+%DIF DIFCODE_UNDERLINE %DIF PREAMBLE
+  moredelim=[il][\color{red}\sout]{\%DIF\ <\ }, %DIF PREAMBLE
+  moredelim=[il][\color{blue}\uwave]{\%DIF\ >\ } %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstdefinestyle{DIFverbatimstyle}{ %DIF PREAMBLE
+	language=DIFcode, %DIF PREAMBLE
+	basicstyle=\ttfamily, %DIF PREAMBLE
+	columns=fullflexible, %DIF PREAMBLE
+	keepspaces=true %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim}{\lstset{style=DIFverbatimstyle}}{} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim*}{\lstset{style=DIFverbatimstyle,showspaces=true}}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
+
+\begin{document}
+
+\begin{center}
+\large
+Problem Set \DIFdelbegin \DIFdel{3}\DIFdelend \DIFaddbegin \DIFadd{4}\DIFaddend : Demand Estimation\\
+\DIFdelbegin \DIFdel{450-2 Winter 2017}%DIFDELCMD < \\
+%DIFDELCMD < %%%
+\DIFdel{Due February 15th
+ }\DIFdelend \DIFaddbegin \DIFadd{450-1
+ }\DIFaddend \end{center}
+
+\DIFaddbegin \section*{\DIFadd{Preface}}
+
+ \DIFaddend This problem set is designed to help you to understand the nuts and
+ bolts of discrete choice demand models and imperfect competition. In
+ this exercise, we will use simulated fake data so that you know the
+ true distributions and then we will try alternative approaches to
+ estimation. Please read the full problem set before starting, as it
+ may save some heart-ache. \textbf{The problem set is quite long and you should start working on this as soon as possible!}
+
+ \DIFaddbegin \DIFadd{In addition to the lecture slides, there are several papers which can serve as good resources for this PSET. Among them are \mbox{%DIFAUXCMD
+\citet{dube_improving_2012}}\hskip0pt%DIFAUXCMD
+, which has good guidance on implementing the MPEC algorithm (note the appendix \mbox{%DIFAUXCMD
+\citet{dube_online_2012}}\hskip0pt%DIFAUXCMD
+, which discusses the constraints Jacobian structure); \mbox{%DIFAUXCMD
+\citet{conlon_best_2020}}\hskip0pt%DIFAUXCMD
+, which describes in detail the popular PyBLP package (note that this is a NFP paper, but it can still guide your MPEC creation); and \mbox{%DIFAUXCMD
+\citet{nevo_practitioners_2000} }\hskip0pt%DIFAUXCMD
+(again note that this is a NFP paper). There will be small differences across the papers and between the papers and the lecture notes; for instance, the lecture notes optimize $\delta$ in their MPEC while \mbox{%DIFAUXCMD
+\citet{dube_improving_2012} }\hskip0pt%DIFAUXCMD
+optimize $\xi$. }\textbf{\DIFadd{Make sure your code is internally consistent}}\DIFadd{; i.e. your objective function, constraints, gradient, and Jacobian all correspond. 
+}
+
+ \DIFadd{This problem set can be done in multiple programming languages (the most popular historically have been Julia, Matlab, Python, and R). Some students have also used this as a chance to familiarize themselves with Knitro. As specified below, whatever language/solver you use, }\textbf{\DIFadd{you have to provide a gradient and Jacobian}}\DIFadd{. 
+ }
+
+
+\DIFaddend \section{Market Simulation}
+
+\subsection{Model}
+\subsubsection{Demand:}
+Consumers' preference for product $j$ and market $m$ is assumed to
+take the following form:
+
+\begin{align}
+U_{ijm} &=X_{jm} \beta - \alpha_i p_{jm} + \xi_{jm} + \epsilon_{ijm} \nonumber\\
+\alpha_i &= \alpha+\sigma_{\alpha} v_{ip}\nonumber\\
+U_{i0} &= 0
+\end{align}
+where the product characteristics are iid with distributions:
+\begin{itemize}
+\item $X_{jm}=(X_{1jm}, X_{2jm}, X_{3jm})$, with $X_{1jm}=1$ (a constant).
+\item $X_2\sim U[0,1]$ and $X_3\sim N(0,1)$
+\item $\xi_{jm}\sim N(0,1)$.
+\end{itemize}
+
+Similarly, the consumer taste shocks are iid with distributions
+\begin{itemize}
+\item $\nu_{ip}\sim LN(0,1)$, where LN is the lognormal distribution
+\item $\epsilon_{ijm}$ is drawn from type I extreme value distribution.
+\end{itemize}
+
+\subsubsection{Supply:}
+The marginal cost of producing product $j$ in market $m$ is given by:
+\begin{equation}
+MC_{jm}=\gamma_0+\gamma_1 W_{j}+\gamma_2Z_{jm} +\eta_{jm}
+\end{equation}
+where $W_j \sim N(0,1)$, $Z_{jm}\sim N(0,1)$ and $\eta_{jm} \sim
+N(0,1)$. All products are produced by single-product firms. The
+markets are regional, while the firms are national. Therefore, $W_j$
+is a common cost shifter for firm $j$ across all markets.
+
+\subsubsection{Parameters:}
+In the remainder of this problem set, you will estimate the demand parameters $\theta=\{ \beta, \alpha, \sigma_{\alpha}\}$, and the supply parameters $\gamma$.
+
+Let the true parameter values be:
+\begin{itemize}
+\item $\beta=(5,1,1)$
+\item $\alpha=1$ and $\sigma_{\alpha}=1$
+\item $(\gamma_0,\gamma_1, \gamma_2) = (2,1,1)$.
+\end{itemize}
+
+\DIFdelbegin \DIFdel{Provided in matlab }\DIFdelend \DIFaddbegin \subsection{\DIFadd{Data}}
+
+\DIFadd{Provided in CSV }\DIFaddend files are the simulated markets, prices and market shares for \DIFdelbegin \DIFdel{two }\DIFdelend \DIFaddbegin \DIFadd{three }\DIFaddend simulations (generated using the true parameters): \DIFaddbegin \DIFadd{10 markets and 3 products, }\DIFaddend 100 markets and 3 products, 100 markets and 5 products. \DIFaddbegin \DIFadd{The data list observations at the product-market (jm) level. They are ordered in cycles of products within cycles of markets (product and market columns are also provided for clarity).
+}\DIFaddend 
+
+\DIFdelbegin \textbf{\DIFdel{For each of these two simulations, compare the distribution of prices, profits and consumer surplus.  For consumer surplus, simulate draws of consumers from the true distribution and calculate their optimal purchasing decision and welfare}}
+%DIFAUXCMD
+\DIFdelend \DIFaddbegin \begin{enumerate}[1.]
+\item \DIFadd{For each of these three simulations, compare the distribution of prices, profits and consumer surplus.  For consumer surplus, simulate draws of consumers from the true distribution and calculate their optimal purchasing decision and welfare. 
+}\end{enumerate}
+\DIFaddend 
+
+\section{BLP and Hausman Instruments}
+
+Unless specified, use the dataset with $J=3$ and $M=100$ for the
+following exercises:
+
+\begin{enumerate}[1.]
+\item Consider the following set of moment conditions: $E[\xi|X]=0$ and
+  $E[\xi|p]=0$.
+  \begin{enumerate}
+  \item Using the $(J,M)=(3,200)$ dataset, compute the values of
+    $E[\xi_{jm}X_{jm}]$, $E[\xi_{jm}p_{jm}]$ and
+    $E[\xi_{jm}\bar{p}_{jm}]$, where $\bar{p}_{jm}$ is the average
+    price of products in the other markets.
+  \item Which of these moment conditions is valid? Which of them are relevant?
+    Why?
+  \item Can you use both BLP and Hausman instruments in this
+    setting? Why? Why not?
+  \end{enumerate}
+\item Estimate $\theta$ a.la. BLP, but using \emph{demand-side
+    moments only} i.e. $E[\xi|X]=0$ and writing the problem as an MPEC
+  \begin{enumerate}
+  \item Write down the BLP moments.
+  \item Construct your objective function.
+  \item Construct the constraints function.
+  \item Construct the gradient and \DIFdelbegin \DIFdel{Hessian}\DIFdelend \DIFaddbegin \DIFadd{Jacobian}\DIFaddend .
+  \item Try to estimate $\theta$ and the standard errors. Report the
+    estimates, bias and standard errors for each parameter.
+
+    Note: You should start the optimization routine at several
+    different starting values, and ensure that you are confident about
+    your results. Comment on which parameters appear to be most stable across
+    runs?
+
+  \item Compute the price elasticity of demand at equilibrium prices,
+    profits and consumer surplus at the estimated parameters. Compare
+    with the true values.
+  \item Repeat the estimation for $M=10$. How do the estimates,
+    standard errors and stability of the optimization routine change?
+  \end{enumerate}
+\item Estimate $\theta$ a.la. BLP, but assuming incorrectly that $E[\xi|p]=0$
+  within each market. Compare the parameter estimates to the true
+  values and the ones obtained using BLP instruments. Comment.
+\end{enumerate}
+
+\section{\DIFdelbegin \DIFdel{Bonus: }\DIFdelend Adding Supply-side\DIFdelbegin \DIFdel{Instruments}\DIFdelend }
+
+\DIFdelbegin \DIFdel{If you are able to solve the previous problem, you can move on to the following two sections for extra credit. Unless specified, use the dataset with $J=3$ and $M=100$ for the
+following exercises:
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdelend \begin{enumerate}
+\item Estimate $\theta$ assuming $E[\xi|X,W]=0$.
+  \begin{enumerate}
+  \item Write down the BLP moments, as well as a moment with the cost shifter $W$.
+  \item Estimate $\theta$ and the standard errors. Report the
+    estimates, bias and standard errors for each parameter. Compute
+    elasticity of demand at equilibrium prices, profits and consumer
+    surplus at the estimated parameters. Compare with the true values.
+  \item Repeat the estimation for $M=10$. How do the estimates,
+    standard errors and stability of the optimization routine change?
+  \item Compare the answers obtained here with the true values and the
+    estimates using the BLP instruments alone.
+  \end{enumerate}
+
+\item \DIFdelbegin \DIFdel{Estimate $\theta$ and $\gamma$ jointly, assuming that
+  $E[\xi,\eta|X,W]=0$}\DIFdelend \DIFaddbegin \DIFadd{Estimating marginal costs}\DIFaddend .
+  \begin{enumerate}
+  \item Write down marginal costs under the three pricing assumptions:
+    1) perfect competition, 2) perfect collusion, and 3) oligopoly
+    (correct model).
+  \item Using your most preferred estimates so far, compute the
+    marginal costs. Comment on why you prefer these estimates. Compare
+    the marginal costs to the true marginal costs in the data.
+  \DIFaddbegin \end{enumerate}
+\end{enumerate}
+
+\section{\DIFadd{Bonus: Joint Estimation}}
+
+\DIFadd{Estimate $\theta$ and $\gamma$ jointly, assuming that
+  $E[\xi,\eta|X,W]=0$
+  }
+
+\begin{enumerate}
+  \DIFaddend \item Estimate the demand and supply parameters under \DIFdelbegin \DIFdel{these three
+    assumptions}\DIFdelend \DIFaddbegin \DIFadd{1) perfect competition, 2) perfect collusion, and 3) oligopoly (correct model)}\DIFaddend . Comment on the estimates, standard errors, and demand elasticities at observed prices comparing them to previous estimates.
+\end{enumerate}
+\DIFdelbegin %DIFDELCMD < \end{enumerate}
+%DIFDELCMD < %%%
+\DIFdelend 
+
+
+\section{Bonus: Merger exercise}
+
+\begin{enumerate}
+\item Pick a set of parameter estimates that you trust the most for
+  the following exercises. Why do you prefer these over the others?
+\item Suppose firm 1 and firm 2 plan to merge.
+  \begin{enumerate}
+  \item Write down the merged firm's pricing problem.
+  \item Predict the new set of prices using \emph{estimated}
+    parameters. How does markup change?
+  \item Compare consumer surplus, prices and profits.
+  \end{enumerate}
+\end{enumerate}
+\DIFaddbegin 
+
+\bibliography{bib}
+\DIFaddend 
+
+\end{document}
