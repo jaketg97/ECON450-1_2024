@@ -58,7 +58,7 @@ def ACF_estimation(dat):
             moments = jnp.append(moments, z_moment)
         return (moments.transpose() @ np.eye(moments.size) @ moments) 
     
-    solver = jaxopt.BFGS(fun = ACF_GMM_val_grad)
+    solver = jaxopt.BFGS(fun = ACF_GMM_val_grad, verbose = False)
     res = solver.run(np.array([1.0,1.0]), data = ACF_data.to_numpy())
     beta_k, beta_l = res.params.tolist()
     return(beta_k, beta_l)
