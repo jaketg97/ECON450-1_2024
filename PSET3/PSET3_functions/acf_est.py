@@ -17,9 +17,13 @@ def ACF_estimation(dat):
     #####
 
     ACF_data, phi_vars = poly_3v("l", "k", "m", ACF_data)
-    acf_first_stage = sm.OLS(ACF_data["y"], sm.add_constant(ACF_data[phi_vars])).fit()
-    acf_first_stage.resid
-    ACF_data["y_hat"] = acf_first_stage.predict(sm.add_constant(ACF_data[phi_vars]))
+    constant = jnp.ones((ACF_data.shape[0], 1))
+    phi_var_mat = jnp.array(ACF_data[phi_vars].to_numpy())
+    # acf_first_stage = sm.OLS(ACF_data["y"], sm.add_constant(ACF_data[phi_vars])).fit()
+    # acf_first_stage.resid
+    X = jnp.hstack((constant, phi_var_mat))
+    y = ACF_data["y"].copy()
+    ACF_data["y_hat"] = jnp_reg_predict(y, X)
     ACF_data["phi_prediction"] = ACF_data["y_hat"] 
     ACF_data["phi_prediction_lag"] = ACF_data.groupby("firm_id")["phi_prediction"].shift(1)
 
@@ -44,10 +48,11 @@ def ACF_estimation(dat):
         dat = data 
         omega = dat[:, column_indices["phi_prediction"]] - beta_k * dat[:, column_indices["k"]] - beta_l * dat[:, column_indices["l"]]
         omega_lag = dat[:, column_indices["phi_prediction_lag"]] - beta_k * dat[:, column_indices["k_lag"]] - beta_l * dat[:, column_indices["l_lag"]]
-        g = omega_lag
-        g2 = jnp.power(omega_lag, 2)
-        g3 = jnp.power(omega_lag, 3)
-        g_func = jnp.array([jnp.ones(g.shape[0]),g, g2, g3])
+        g = omega_lag.reshape(-1, 1)
+        g2 = jnp.power(omega_lag, 2).reshape(-1, 1)
+        g3 = jnp.power(omega_lag, 3).reshape(-1, 1)
+        g_func = jnp.hstack((jnp.ones((g.shape[0], 1)),g, g2, g3))
+        # return omega, g_func
         omega_hat = jnp_reg_predict(omega, g_func)
         ksi = omega - omega_hat
         instruments = ["k", "l_lag"]
@@ -58,6 +63,7 @@ def ACF_estimation(dat):
             moments = jnp.append(moments, z_moment)
         return (moments.transpose() @ np.eye(moments.size) @ moments) 
     
+    # return ACF_GMM_val_grad(np.array([1.0,1.0]), ACF_data.to_numpy())
     solver = jaxopt.BFGS(fun = ACF_GMM_val_grad, verbose = False)
     res = solver.run(np.array([1.0,1.0]), data = ACF_data.to_numpy())
     beta_k, beta_l = res.params.tolist()
