@@ -45,10 +45,10 @@ def LP_estimation(dat):
         dat = data 
         omega = dat[:, column_indices["phi_prediction"]] - beta_k * dat[:, column_indices["k"]] - beta_m * dat[:, column_indices["m"]]
         omega_lag = dat[:, column_indices["phi_prediction_lag"]] - beta_k * dat[:, column_indices["k_lag"]] - beta_m * dat[:, column_indices["m_lag"]]
-        g = omega_lag
-        g2 = jnp.power(omega_lag, 2)
-        g3 = jnp.power(omega_lag, 3)
-        g_func = jnp.array([jnp.ones(g.shape[0]),g, g2, g3])
+        g = omega_lag.reshape(-1, 1)
+        g2 = jnp.power(omega_lag, 2).reshape(-1, 1)
+        g3 = jnp.power(omega_lag, 3).reshape(-1, 1)
+        g_func = jnp.hstack((jnp.ones((g.shape[0],1)),g, g2, g3))
         omega_hat = jnp_reg_predict(omega, g_func)
         ksi_epsilon = dat[:, column_indices["y_gross"]] - lp_first_stage.params["l"] * dat[:, column_indices["l"]] - beta_k * dat[:, column_indices["k"]] - beta_m * dat[:, column_indices["m"]] - omega_hat
         instruments = ["k", "m_lag", "l_lag", "m_lag_2", "k_lag"]
