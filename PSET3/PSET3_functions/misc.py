@@ -65,10 +65,10 @@ def poly_3v(x, y, z, data):
 # shortcut functions to do everything in jnp so I can use autograd
 
 def jnp_reg(y, X):
-    return jnp.linalg.solve(X.dot(X.T), X.dot(y))
+    return jnp.linalg.solve(X.T@X, X.T@y)
 
 def jnp_reg_predict(y, X):
-    return jnp.linalg.solve(X.dot(X.T), X.dot(y)).dot(X)
+    return X@jnp.linalg.solve(X.T@X, X.T@y)
 
 def boot(data, func, reps):
     coefs = list()
