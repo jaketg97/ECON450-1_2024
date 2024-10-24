@@ -70,4 +70,4 @@ def ACF_estimation(dat):
     beta_k, beta_l = res.params.tolist()
     numerical = optimize.minimize(lambda x: ACF_GMM_val_grad(x, ACF_data.to_numpy()), x0 = [1.0, 1.0], method="Nelder-Mead")
     beta_k_num, beta_l_num = numerical.x
-    return(beta_k, beta_l, beta_k_num, beta_l_num)
+    return(beta_k, beta_l, beta_k_num, beta_l_num, res, numerical)
