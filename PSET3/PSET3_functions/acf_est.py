@@ -3,6 +3,7 @@ import statsmodels.api as sm
 import jax.numpy as jnp
 import jaxopt as jaxopt
 from PSET3_functions.misc import poly_2v, poly_3v, jnp_reg_predict
+from scipy import optimize
 
 def ACF_estimation(dat):
 
@@ -67,4 +68,6 @@ def ACF_estimation(dat):
     solver = jaxopt.BFGS(fun = ACF_GMM_val_grad, verbose = False)
     res = solver.run(np.array([1.0,1.0]), data = ACF_data.to_numpy())
     beta_k, beta_l = res.params.tolist()
-    return(beta_k, beta_l)
+    numerical = optimize.minimize(lambda x: ACF_GMM_val_grad(x, ACF_data.to_numpy()), x0 = [1.0, 1.0], method="Nelder-Mead")
+    beta_k_num, beta_l_num = numerical.x
+    return(beta_k, beta_l, beta_k_num, beta_l_num)
