@@ -138,7 +138,7 @@ print(acf_est.head())
 For Step 2, we simplify our life by reading **Appendix A-4** of ACF (or levpet Stata Journal; both use same trick). We can "concentrate" out $\rho, \beta_0$ by observing...
 \begin{aligned}
 \beta_0 + \omega_{it}(\beta_k,\beta_l) = \Phi_t (k_{it}, l_{it}, m_{it}) - \beta_k k_{it} - \beta_l l_{it} \\
-\beta_0 + \omega_{it}(\beta_k, \beta_l) = \beta_0 + (f(\omega_{i,t-1}) + \xi_{it}) 
+\beta_0 + \omega_{it}(\beta_k, \beta_l) = \beta_0 + (E[\omega_{it}|\omega_{it-1}] + \xi_{it}) 
 \end{aligned}
 That is, we can recover $\omega_{it}$ up to a constant with only guesses on $\beta_k, \beta_l$, and we can use that estimate to recover $\xi_{it}$ (if we assume AR1, as we do, regressing our estimate of $\beta_0 + \omega$ on its lag gives us $\xi$ as the residual). Now we can use moments $E[\xi_{it} | I_{i,t-1}] = 0$; much easier to optimize, this is only a 2-dimensional problem! 
 

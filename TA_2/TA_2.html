@@ -491,7 +491,7 @@ E[\xi_{it} + \epsilon_{it}|I_{i,t-1}] = 0 \\
 <section id="acf-step-1" class="slide level2">
 <h2>ACF Step 1</h2>
 <p>First, create a function that takes data and returns <span class="math inline">\(\Phi_t\)</span>; in practice these are predicted values! Standard thing to do is estimate 3rd order polynomial of variables.</p>
-<div id="9d0252da" class="cell" data-execution_count="1">
+<div id="78368703" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href=""></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href=""></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-3"><a href=""></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
@@ -551,13 +551,13 @@ E[\xi_{it} + \epsilon_{it}|I_{i,t-1}] = 0 \\
 For Step 2, we simplify our life by reading <strong>Appendix A-4</strong> of ACF (or levpet Stata Journal; both use same trick). We can “concentrate” out <span class="math inline">\(\rho, \beta_0\)</span> by observing…
 <span class="math display">\[\begin{aligned}
 \beta_0 + \omega_{it}(\beta_k,\beta_l) = \Phi_t (k_{it}, l_{it}, m_{it}) - \beta_k k_{it} - \beta_l l_{it} \\
-\beta_0 + \omega_{it}(\beta_k, \beta_l) = \beta_0 + (f(\omega_{i,t-1}) + \xi_{it})
+\beta_0 + \omega_{it}(\beta_k, \beta_l) = \beta_0 + (E[\omega_{it}|\omega_{it-1}] + \xi_{it})
 \end{aligned}\]</span>
 <p>That is, we can recover <span class="math inline">\(\omega_{it}\)</span> up to a constant with only guesses on <span class="math inline">\(\beta_k, \beta_l\)</span>, and we can use that estimate to recover <span class="math inline">\(\xi_{it}\)</span> (if we assume AR1, as we do, regressing our estimate of <span class="math inline">\(\beta_0 + \omega\)</span> on its lag gives us <span class="math inline">\(\xi\)</span> as the residual). Now we can use moments <span class="math inline">\(E[\xi_{it} | I_{i,t-1}] = 0\)</span>; much easier to optimize, this is only a 2-dimensional problem!</p>
 </section>
 <section id="acf-step-2-1" class="slide level2">
 <h2>ACF Step 2</h2>
-<div id="fc23f387" class="cell" data-execution_count="2">
+<div id="94058f99" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href=""></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb3-2"><a href=""></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb3-3"><a href=""></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -612,7 +612,7 @@ For Step 2, we simplify our life by reading <strong>Appendix A-4</strong> of ACF
 <h2>ACF Step 2</h2>
 <p>Plotted the objective function in a grid around (0,0) to illustrate that it <strong>isn’t smooth!</strong> Which is why your <strong>numerical gradient won’t work</strong>!</p>
 <p>Luckily, I wrote all my functions in JAX (can’t rely on packages!), so I can easily recover the precise gradient using autograd.</p>
-<div id="1be4401d" class="cell" data-execution_count="3">
+<div id="ae6eca58" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href=""></a><span class="im">import</span> jax</span>
 <span id="cb4-2"><a href=""></a><span class="im">from</span> PSET3_functions.acf_est <span class="im">import</span> ACF_ObjectiveFnct</span>
 <span id="cb4-3"><a href=""></a></span>
@@ -629,7 +629,7 @@ For Step 2, we simplify our life by reading <strong>Appendix A-4</strong> of ACF
 <span id="cb4-14"><a href=""></a>compute_gradient([<span class="fl">0.0</span>, <span class="fl">0.0</span>], acfdat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell fragment" data-execution_count="3">
-<div class="cell-output cell-output-display" data-execution_count="8">
+<div class="cell-output cell-output-display" data-execution_count="13">
 <pre><code>[Array(-0.00069273, dtype=float32, weak_type=True),
  Array(-0.00156478, dtype=float32, weak_type=True)]</code></pre>
 </div>
@@ -638,7 +638,7 @@ For Step 2, we simplify our life by reading <strong>Appendix A-4</strong> of ACF
 <section id="acf-step-2-3" class="slide level2">
 <h2>ACF Step 2</h2>
 <p>Now that we have the gradient, we can solve for the optimal <span class="math inline">\(\beta_k, \beta_l\)</span> using standard optimization routines (BFGS, since low-dimensional). Moreover, since the space is small (because we concentrated out two parameters), we can “check” our solution by using a grid search method as well (i.e.&nbsp;Nelder-Mead).</p>
-<div id="378a8ad4" class="cell" data-execution_count="4">
+<div id="cca97da9" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href=""></a><span class="im">from</span> PSET3_functions.acf_est <span class="im">import</span> ACF_estimation</span>
 <span id="cb6-2"><a href=""></a><span class="im">from</span> PSET3_functions.misc <span class="im">import</span> gen_data</span>
 <span id="cb6-3"><a href=""></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -713,7 +713,7 @@ s_{jt} = \ln \mathscr{E} + \ln(\partial/\partial m_{jt} f(k_{jt}, l_{jt}, m_{jt}
 </section>
 <section id="gnr-implementation-2" class="slide level2">
 <h2>GNR Implementation</h2>
-<div id="1a3a3d4a" class="cell" data-execution_count="5">
+<div id="fbe89bfe" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href=""></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb8-2"><a href=""></a><span class="im">from</span> PSET3_functions.gnr_est <span class="im">import</span> GNR_estimation</span>
 <span id="cb8-3"><a href=""></a><span class="im">import</span> os</span>
