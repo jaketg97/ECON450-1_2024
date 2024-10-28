@@ -26,7 +26,8 @@ This TA session will review Production in the context of PSET 3. We will cover..
 
 - Break problem and code (at least initially) into pieces; make sure those pieces work well before proceeding
 - Read paper **and appendices**. Appendices often contain most practical implementation information (as we'll see)
-- etc...
+- Write pseudo-code/work out algebra yourself; easy to read and follow others work, but need to do it yourself (I think)
+- Commit to one notation and stick with it (this made me very confused when I was doing my PSET, and wasted my time)
 
 # ACF Theory 
 
