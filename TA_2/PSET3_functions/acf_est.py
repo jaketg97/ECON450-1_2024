@@ -19,8 +19,6 @@ def ACF_estimation(dat):
     ACF_data, phi_vars = poly_3v("l", "k", "m", ACF_data)
     constant = jnp.ones((ACF_data.shape[0], 1))
     phi_var_mat = jnp.array(ACF_data[phi_vars].to_numpy())
-    # acf_first_stage = sm.OLS(ACF_data["y"], sm.add_constant(ACF_data[phi_vars])).fit()
-    # acf_first_stage.resid
     X = jnp.hstack((constant, phi_var_mat))
     y = ACF_data["y"].copy()
     ACF_data["y_hat"] = jnp_reg_predict(y, X)
@@ -67,9 +65,9 @@ def ACF_estimation(dat):
     solver = jaxopt.BFGS(fun = ACF_GMM_val_grad, verbose = False)
     res = solver.run(np.array([1.0,1.0]), data = ACF_data.to_numpy())
     beta_k, beta_l = res.params.tolist()
-    search = optimize.minimize(lambda x: ACF_GMM_val_grad(x, ACF_data.to_numpy()), x0 = [1.0, 1.0], method="Nelder-Mead")
-    beta_k_search, beta_l_search = search.x
-    return(beta_k, beta_l, beta_k_search, beta_l_search)
+    # search = optimize.minimize(lambda x: ACF_GMM_val_grad(x, ACF_data.to_numpy()), x0 = [1.0, 1.0], method="Nelder-Mead") USED THIS FOR TEACHING PURPOSES
+    # beta_k_search, beta_l_search = search.x
+    return(beta_k, beta_l)
 
 def ACF_FirstStage(dat):
 

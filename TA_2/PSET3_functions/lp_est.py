@@ -2,7 +2,7 @@ import numpy as np
 import statsmodels.api as sm
 import jax.numpy as jnp
 import jaxopt as jaxopt
-from PSET3_functions.misc import poly_2v, jnp_reg_predict
+from PSET3_functions.misc import poly_2v, jnp_reg_predict, jnp_reg
 
 
 def LP_estimation(dat):
@@ -13,10 +13,17 @@ def LP_estimation(dat):
     #####
 
     LP_data, phi_vars = poly_2v("k", "m", LP_data)
-    lp_first_stage = sm.OLS(LP_data["y_gross"], sm.add_constant(LP_data[phi_vars + ["l"]])).fit()
-    lp_first_stage.params["l"]
-    LP_data["y_gross_hat"] = lp_first_stage.predict(sm.add_constant(LP_data[phi_vars + ["l"]]))
-    LP_data["phi_prediction"] = LP_data["y_gross_hat"] - lp_first_stage.params["l"] * LP_data["l"]
+    constant = jnp.ones((LP_data.shape[0], 1))
+    phi_var_mat = jnp.array(LP_data[phi_vars].to_numpy())
+    l = LP_data["l"]
+    X = jnp.hstack((constant, phi_var_mat, l))
+    y = LP_data["y"].copy()
+    # lp_first_stage = sm.OLS(LP_data["y_gross"], sm.add_constant(LP_data[phi_vars + ["l"]])).fit()
+    # lp_first_stage.params["l"]
+    LP_data["y_gross_hat"] = jnp_reg_predict(y, X)
+    beta_hat_stage1 = jnp_reg(y, X)
+    beta_hat_l = beta_hat_stage1[len(beta_hat_stage1)]
+    LP_data["phi_prediction"] = LP_data["y_gross_hat"] - beta_hat_l * LP_data["l"]
 
     #####
     # LP Second Stage 
