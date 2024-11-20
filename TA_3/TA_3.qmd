@@ -1,0 +1,205 @@
+---
+title: "TA Session 3"
+subtitle: "Production function estimation in PSET3"
+format:
+  revealjs: 
+    slide-number: true
+    chalkboard: 
+      buttons: false
+    preview-links: auto
+    css: styles.css
+resources:
+  - demo.pdf
+jupyter: python3
+---
+
+## Plan for today
+
+This TA session is solely dedicated to your questions on PSET4. It's organized as follows:
+
+1.  General tips
+2.  Theory
+3.  Implementation
+4.  My version
+
+## General tips 
+
+- This is going to take time. Don't leave it for the last minute.
+- **Read**. This TA session/Gaston's slides alone are almost certainly not going to be enough. I found Dube Fox Su (2012) and the corresponding [appendix](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.econometricsociety.org/publications/econometrica/2012/09/01/improving-numerical-performance-static-and-dynamic-aggregate/supp/8585_extensions_0.pdf&ved=2ahUKEwi-_6yX3-uJAxXSmIkEHaHZJKEQFnoECBsQAQ&usg=AOvVaw22HuR_G9AtRkTZOs-seBx6) helpful, along with Nevo (2001) + appendix, and PyBLP has good documentation.
+- Hardest part is **Jacobian of MPEC constraints**. This is where some of the tricks we cover today will be most helpful, in particular recovering $\partial S/\partial \delta$ using "Gaston's trick".
+- Be persistent! You'll feel stuck a lot on this; it's normal, and **you can get this right**. Easiest to do when you give yourself a lot of time.
+
+# Theory
+
+## Original problem
+
+### Random Coefficients Logit (Mixed Logit)
+The indirect utility of consumer i from consuming product j in market t:
+
+$$
+u_{ijt} = \beta_i x_{jt} + \alpha_i p_{jt} + \xi_{jt} + \epsilon_{ijt}
+$$
+
+Where:
+
+- $p_{jt}$: price of product $j$ in market $t$
+- $x_{jt}$: $K$-dimensional vector of observable characteristics of product $j$
+- $\xi_{jt}$: unobserved product characteristic
+- $\epsilon_{ijt}$: idiosyncratic i.i.d error term
+- $\alpha_i$: consumer $i$’s marginal utility of income
+- $\beta_i$: $K$-dimensional vector of individual-specific taste coefficients
+
+## Rewriting the Indirect Utility
+Rewriting gives:
+
+$$
+u_{ijt} = \beta_0 x_{jt} + \sum \beta_\nu \beta_i x_{jt} + \alpha_0 p_{jt} + \sigma \alpha_\nu \alpha_i p_{jt} + \xi_{jt} + \epsilon_{ijt}
+$$
+
+This can be expressed as:
+
+$$
+u_{ijt} = \delta_{jt} + \mu_{ijt} + \epsilon_{ijt}
+$$
+
+Where:
+
+- $\delta_{jt} = \beta_0 x_{jt} + \alpha_0 p_{jt} + \xi_{jt}$
+- $\mu_{ijt} = \sum \sigma_\beta \nu_\beta x_{jt}$
+
+
+## Market Shares
+Assuming $\epsilon_{ijt}$ is i.i.d with a Type I extreme-value distribution, the probability that consumer $i$ purchases product $j$ in market $t$ is:
+
+$$
+s_{ijt}(\delta_{jt}, \theta_2) = \frac{e^{\delta_{jt} + \mu_{ijt}}}{1 + \sum_k e^{\delta_{kt} + \mu_{ikt}}}
+$$
+
+Integrating over all consumers gives the market share of product $j$:
+
+$$
+s_{jt}(\delta_{jt}, \theta_2) = \int \frac{e^{\delta_{jt} + \mu_{ijt}}}{1 + \sum_k e^{\delta_{kt} + \mu_{ikt}}} dF_\nu(\theta_2)
+$$
+
+## Inversion, Contraction, and Moments
+From Berry (1994), at the true values of $\delta$:
+
+$$
+s_{jt} = s_{jt}(\delta_{jt}, \theta_2)
+$$
+
+BLP (1995) shows the contraction mapping to obtain $\delta$:
+
+$$
+\delta^{h+1} = \delta^h + \ln(s) - \ln(s(\delta^h, \theta_2))
+$$
+
+## Estimation Outline
+
+1. Pick $\delta_0, \theta_0$ arbitrarily.
+2. Iterate on the contraction mapping to find $\delta_1, \xi_1$.
+3. Calculate moments:
+
+$$
+\bar{g}_n(\theta) = \frac{1}{JT} \sum_{j,t} f(z_{jt}) \cdot \xi_{jt}
+$$
+
+4. Calculate GMM objective function, gradient, and Hessian.
+5. Update $\theta_1$ and repeat until a minimum is found.
+
+## Rewriting the Problem as an MPEC
+
+Reframe NFP problem as an MPEC:
+
+$$
+\min_{\theta_2, \delta, \eta} \eta' W \eta
+$$
+
+Subject to:
+
+$$
+s(\delta, \theta_2) - s = 0, \quad \bar{g}_n(\theta) - \eta = 0
+$$
+
+**YOU SHOULD DO IT THIS WAY** (with standard "you may be better at this than me" caveats).
+
+**TIP**: I found it helpful to still write an inner loop; this way you can easily supply "correct" first guesses, i.e. make sure your $\theta_2$ matches your $\delta$ such that $s(\delta, \theta_2) = s$.
+
+## A Note on the Shares: Simulation
+
+Note that $\nu_i$ is not data. For example, in the problem set, draw $\nu_i$ from a lognormal distribution. To get $s_j$:
+
+$$
+s_{jt}(\delta_{jt}, \theta_2) \approx \frac{1}{I} \sum_{i=1}^{I} \frac{e^{\delta_{jt} + \mu_{ijt}}}{1 + \sum_k e^{\delta_{kt} + \mu_{ikt}}}
+$$
+
+For improved simulation, consider importance sampling **(not necessary for the problem set)**.
+
+# Implementation
+
+## Gradient and Jacobian
+
+1. **Gradient and Jacobian Requirements**
+It is imperative to supply the gradient of the objective function and the Jacobian to whatever solver you're using. You will need to calculate yourself directly. In MPEC, you’ll minimize with respect to $\theta_2$, $\delta$, and $\eta$.
+
+2. **Gradient Calculation**
+The gradient is given by:
+   $$
+   \nabla_{\theta_2, \delta, \eta} = \begin{bmatrix} 0 & 0 & 2\eta \end{bmatrix}
+   $$
+**Note:** The gradient derivatives must be in the same order as the parameters provided to the solver.
+
+## Gradient and Jacobian cont.
+
+3. **Jacobian Structure**
+    $$
+   \begin{bmatrix}
+   \frac{\partial s}{\partial \theta_2} & \frac{\partial s}{\partial \delta} & 0 \\
+   0 & \frac{1}{JT} (A \cdot Z)' & -I
+   \end{bmatrix}
+   $$
+   - **Note:** The Jacobian rows depend on the order of the constraints supplied to the solver, while the columns depend on the order of the parameters.
+   - $Z$ refers to the matrix of instruments or functions of instruments $f(z)$ you decide to use.
+
+## Gradient and Jacobian cont.
+
+4. **Jacobian Order and Signs**
+   - The Jacobian respects the order and signs of the MPEC problem outlined in these slides.
+   - With:
+   $$
+   A = I - \bar{X} \cdot (\bar{X}' \cdot P_z \cdot \bar{X})^{-1} \cdot \bar{X} \cdot P_z
+   $$
+   - Where $\bar{X} = [x, p]$ and $P_z = Z \cdot (Z' \cdot Z)^{-1} \cdot Z$.
+
+## Recover $\partial s / \partial \delta$
+
+$$
+\begin{align}
+& s_{ijt}(\theta_2) = \frac{\exp(\delta_{jt} - \theta_2 \nu_i p_{jt})}{1 + \sum_{k=1}^3 \exp(\delta_{kt} - \theta_2 \nu_i p_{kt})} := \frac{\alpha_{ijt}}{1 + \sum^3_{k=1} \alpha_{ikt}} \\
+& \partial s_{ijt}/\partial \delta_{jt} = \frac{\alpha_{ijt} (1 + \sum^3_{k=1} \alpha_{ikt}) - \alpha_{ijt} \alpha_{ikt}}{(1 + \sum^3_{k=1} \alpha_{ikt})^2} = s_{ijt} (1 - s_{ijt}) \\
+& \partial s_{ijt}/\partial \delta_{kt} = -\frac{\alpha_{ijt} \alpha_{ikt}}{(1 + \sum^3_{k=1} \alpha_{ikt})^2} = -s_{ijt} s_{ikt}
+\end{align}
+$$
+With derivations in mind, you can construct the whole Jacobian matrix $\partial s / \partial \delta$
+
+1. For market $m$, construct $\{\partial s_{ijm}/\partial \delta_{im}\} = -s_{im} s_{im}' + \text{diag}(s_{ijm})$. Think out.
+2. Average across $i$.
+3. The whole Jacobian is just the block matrix market-by-market.
+
+## Recover analytic standard errors
+
+ - Solve a one-step GMM with $W = I$.
+ - The variance-covariance matrix would then be:
+   $$
+   V_{\text{GMM}} = [G' G]^{-1} G' \bar{B} G [G' G]^{-1}
+   $$
+ - Where $G \approx \frac{1}{JT} \sum_{j,t} \frac{\partial g(\theta)}{\partial \theta}$, $\bar{B} \approx \frac{1}{JT} \sum_{j,t} g(\theta) g(\theta)'$
+
+ - What is $\frac{\partial g(\theta)}{\partial \theta}$? Focus on demand-side moments first:
+ $$
+ \frac{\partial g(\theta)}{\partial \theta} = \frac{\partial f(z_{jt}) \cdot \xi_{jt}}{\partial \theta_2}
+ = f(z_{jt}) \cdot \frac{\partial (\delta_{jt} - \beta_0 x_{jt} + \alpha_0 p_{jt})}{\partial \theta_2}
+= f(z_{jt}) \cdot \frac{\partial \delta_{jt}}{\partial \theta_2}
+ $$
+ - Note that $\delta$ depends on $\theta_2$ through the share matching constraint:
+ $= f(z_{jt}) \cdot \frac{\partial s_{jt}}{\partial \delta}^{-1} \cdot \frac{\partial s_{jt}}{\partial \theta_2}$ (By the Implicit Function Theorem.)
