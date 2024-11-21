@@ -49,7 +49,7 @@ def shares(theta_2, delta_long, p_wide, random_vs):
 @jit 
 def shares_im_ddelta(theta_2, delta_m, p_m, v):
     s_ijm = shares_im(p_m, delta_m, theta_2, v)
-    grad_matrix = -1 * s_ijm.reshape(-1,1)@-s_ijm.reshape(-1,1).T 
+    grad_matrix = s_ijm.reshape(-1,1)@-s_ijm.reshape(-1,1).T 
     s_ijm_diag = np.diag(s_ijm)
     grad_matrix = grad_matrix + s_ijm_diag 
     return grad_matrix
