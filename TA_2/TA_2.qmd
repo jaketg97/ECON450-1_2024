@@ -4,10 +4,9 @@ subtitle: "Production function estimation in PSET3"
 format:
   revealjs: 
     slide-number: true
-    chalkboard: 
-      buttons: false
     preview-links: auto
     css: styles.css
+    self-contained: true
 resources:
   - demo.pdf
 jupyter: python3

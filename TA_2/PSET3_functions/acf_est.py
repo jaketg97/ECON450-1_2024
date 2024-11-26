@@ -65,9 +65,9 @@ def ACF_estimation(dat):
     solver = jaxopt.BFGS(fun = ACF_GMM_val_grad, verbose = False)
     res = solver.run(np.array([1.0,1.0]), data = ACF_data.to_numpy())
     beta_k, beta_l = res.params.tolist()
-    # search = optimize.minimize(lambda x: ACF_GMM_val_grad(x, ACF_data.to_numpy()), x0 = [1.0, 1.0], method="Nelder-Mead") USED THIS FOR TEACHING PURPOSES
-    # beta_k_search, beta_l_search = search.x
-    return(beta_k, beta_l)
+    search = optimize.minimize(lambda x: ACF_GMM_val_grad(x, ACF_data.to_numpy()), x0 = [1.0, 1.0], method="Nelder-Mead") # USED FOR TEACHING
+    beta_k_search, beta_l_search = search.x
+    return(beta_k, beta_l, beta_k_search, beta_l_search)
 
 def ACF_FirstStage(dat):
 

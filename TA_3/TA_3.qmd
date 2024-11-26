@@ -4,10 +4,9 @@ subtitle: "Production function estimation in PSET3"
 format:
   revealjs: 
     slide-number: true
-    chalkboard: 
-      buttons: false
     preview-links: auto
     css: styles.css
+    self-contained: true
 resources:
   - demo.pdf
 jupyter: python3
@@ -118,10 +117,10 @@ $$
 Subject to:
 
 $$
-s(\delta, \theta_2) - s = 0, \quad \bar{g}_n(\theta) - \eta = 0
+s(\delta, \theta_2) - s = 0, \quad \bar{g}_n(\delta) - \eta = 0
 $$
 
-**YOU SHOULD DO IT THIS WAY** (with standard "you may be better at this than me" caveats).
+**YOU SHOULD DO IT THIS WAY** (with standard "you may be better at this than me" caveats). Moments are defined in Gaston's Demand III slides (use $E[\xi z] = 0$, recover $\xi$ from residuals of instrument regression on $\delta$).
 
 **TIP**: I found it helpful to still write an inner loop; this way you can easily supply "correct" first guesses, i.e. make sure your $\theta_2$ matches your $\delta$ such that $s(\delta, \theta_2) = s$.
 
@@ -203,3 +202,163 @@ With derivations in mind, you can construct the whole Jacobian matrix $\partial 
  $$
  - Note that $\delta$ depends on $\theta_2$ through the share matching constraint:
  $= f(z_{jt}) \cdot \frac{\partial s_{jt}}{\partial \delta}^{-1} \cdot \frac{\partial s_{jt}}{\partial \theta_2}$ (By the Implicit Function Theorem.)
+
+# My version
+
+## Preview
+
+**Pseudo-code:**
+
+1. Form initial guess of $\theta_2^0$ and $\delta^0$ (set $\delta^0 = \delta(\theta_2^0)$ using contraction mapping, helps with convergence). Supply arbitrary initial $\eta^0 = 1$.
+2. Calculate shares implied by initial guess, $s(\delta^0, \theta_2^0)$.
+3. Calculate moments, $\bar{g}_n(\delta)$.
+    - Recover $\xi^0 = (I - X(X'P_ZX)^{-1}X'P_Z)\delta^0$.
+    - Moments are of form $E[\xi z] = 0$. 
+4. Calculate MPEC objective function, gradient, and constraint Jacobian. 
+5. Rinse and repeat until convergence.
+
+**Just because I did it this way doesn't mean it's the best way.** Do not feel required to follow it.
+  
+## Shares Calculation
+
+- $shares\_im(\theta_2, \delta_m, p_m, v_i)$: returns vector of shares for each product given market/person, i.e. for ($i$, $m$) returns $s_{ijm} = \frac{\exp(\delta_{jm} + \mu_{ijm}(\theta_2))}{1 + \sum_k \exp(\delta_{km} + \mu_{ikm}(\theta_2))}$, where $\mu_{ijm}(\theta_2) = -\theta_2 v_i p_{jm}$
+- $shares\_m(\theta_2, \delta_m, p_m, \{v_i\})$: Given a guess of $\theta_2$, a $\delta_m$, and a vector of random $v_i$ drawn from the LN(0,1) distribution, return a vector of the estimated shares for each product in a given market according to the generic approach outlined in the slides: for market $m$, returns vector of $\hat{s_{m}} = \frac{1}{N} \sum_i^N shares\_im(p_m, \delta_m, \theta_2, v_i)$
+- $shares(\theta_2, \delta, p, \{v_i\})$: Returns vector \{$shares\_m(p_m, \delta_m, \theta_2, \{v_i\})\}_{m \in M}$, i.e. averaged shares for each market (I flatten the 2-d array to make constraints). This is what I'll use for my MPEC. 
+
+and corresponding derivatives...
+
+## Shares Calculation
+
+```{python}
+#| echo: true
+#| output-location: slide
+
+# Pre-question, loading libraries and data
+from scipy.io import loadmat
+import jaxopt as jaxopt
+from PSET4_functions.misc import *
+from PSET4_functions.shares import *
+from PSET4_functions.delta import *
+from PSET4_functions.moments import * 
+from PSET4_functions.mpec_wrapper import *
+
+# Load data
+m100_j3 = loadmat("data/100markets3products.mat")
+dat = clean_data(m100_j3, 3)
+random_vs = np.random.lognormal(0, 1, 1000)
+shares_data_long = dat[['sjm']].to_numpy()
+prices_data_long = dat[['pjm']].to_numpy() 
+shares_data_wide = shares_data_long.reshape(100,3)
+prices_data_wide = prices_data_long.reshape(100,3)
+
+# Compute shares
+theta_2_0 = np.array([.1]) 
+delta_0 = inner_loop(theta_2_0, logit_delta(shares_data_wide).reshape(100, 3), shares_data_wide, prices_data_wide, random_vs)
+shares(theta_2_0, delta_0, prices_data_wide, random_vs)
+```
+
+## Moments Calculation
+
+- hausman_instruments(p_wide): given price data in "wide" form (mXj), construct Hausman instrument: $\frac{1}{M-1} \sum_{n \neq m} P_{jn}$
+- blp_instruments(x_3d): given a 3d matrix of mXjXcharacteristics (so 100X3X3) construct the BLP instruments matrix: $[x_{1jm}, x_{2jm}, x_{3jm}, \sum_{k \neq j} x_{2km}, \sum_{k \neq j} x_{3km}]$.
+- g(delta, prices_wide, x_long, z): construct moments $Z * \hat{\xi}$, where $\hat{\xi}$ is the residuals of an GMM IV of $Z$ on $\delta = \beta X + \alpha P$, i.e. $(I - X (X' P_z X)^{-1} X P_z) \delta$.
+- g_ddelta(delta, prices_wide, x_long, x_3d): returns analytic derivative (just residual maker matrix for now; going to be a mess when I start joint estimating supply and demand).
+- g_jm: construct moments observation by observation (i.e. by jm). I need this to estimate analytic SEs.
+
+## Moments Calculation
+
+```{python}
+#| echo: true
+#| output-location: slide
+
+# Pre-question, loading libraries and data
+from scipy.io import loadmat
+import jaxopt as jaxopt
+from PSET4_functions.misc import *
+from PSET4_functions.shares import *
+from PSET4_functions.delta import *
+from PSET4_functions.moments import * 
+from PSET4_functions.mpec_wrapper import *
+
+# Load data
+m100_j3 = loadmat("data/100markets3products.mat")
+dat = clean_data(m100_j3, 3)
+random_vs = np.random.lognormal(0, 1, 1000)
+shares_data_long = dat[['sjm']].to_numpy()
+prices_data_long = dat[['pjm']].to_numpy() 
+shares_data_wide = shares_data_long.reshape(100,3)
+prices_data_wide = prices_data_long.reshape(100,3)
+shares_data_long = dat[['sjm']].to_numpy()
+prices_data_long = dat[['pjm']].to_numpy() 
+x_data_long = dat[['X1jm', 'X2jm', 'X3jm']].to_numpy()
+x_data_long = dat[['X1jm', 'X2jm', 'X3jm']].to_numpy()
+x_data_3d = x_data_long.reshape(100, 3, 3)
+blp_data = blp_instruments(x_data_3d) 
+hausman_data = hausman_instruments(prices_data_wide)
+z_data = np.concatenate([blp_data, hausman_data.reshape(-1,1)], axis=1)
+
+
+# Compute shares
+theta_2_0 = np.array([.1]) 
+delta_0 = inner_loop(theta_2_0, logit_delta(shares_data_wide).reshape(100, 3), shares_data_wide, prices_data_wide, random_vs)
+g(delta_0, prices_data_wide, x_data_long, x_data_3d, z_data)
+```
+
+## Putting it all together
+
+- mpec_objective: objective function for my MPEC
+- mpec_gradient: gradient for my MPEC
+- mpec_jacobian: jacobian for my MPEC (putting together the pieces as defined by functions above)
+- beta_alpha: recover $\beta$ and $\alpha$ from the results of my MPEC
+- standard_errors: recovers analytic SEs for $\beta$, $\alpha$, and $\sigma_\alpha$, via...
+    1. calculating $V_{GMM}$ for $\theta_2$ with $W=I$, i.e. $[G'G]^{-1}G'BG[G'G]^{-1}$, where $G = \frac{dg}{d\theta_2} = Z_{jt} (\frac{ds}{d\delta}^{-1} \frac{ds}{d\theta_2})$, $B = \frac{1}{JT} \sum_{j,t}g(\theta_2)g'(\theta_2)$
+    2. recover variance for $\alpha, \beta$ via delta method, i.e. for $C = (X' P_Z X)^{-1} X' P_Z$, $[\alpha, \beta] = C \delta(\theta_2) = f(\theta_2)$. Note that $f'(theta_2) = C \frac{d\delta}{d\theta_2} = C (\frac{ds}{d\delta}^{-1} \frac{ds}{d\theta_2})$, and via delta method if $\theta_2 ~ N(0, \sigma^2)$, $[alpha, \beta] ~ N(0, f'(theta_2)^2 \sigma^2$  
+
+## Putting it all together
+
+```{python}
+#| echo: true
+#| output-location: slide
+
+# Pre-question, loading libraries and data
+from scipy.io import loadmat
+import jaxopt as jaxopt
+from PSET4_functions.misc import *
+from PSET4_functions.shares import *
+from PSET4_functions.delta import *
+from PSET4_functions.moments import * 
+from PSET4_functions.mpec_wrapper import *
+
+# load data
+m100_j3 = loadmat("data/100markets3products.mat")
+dat = clean_data(m100_j3, 3)
+shares_data_long = dat[['sjm']].to_numpy()
+prices_data_long = dat[['pjm']].to_numpy() 
+x_data_long = dat[['X1jm', 'X2jm', 'X3jm']].to_numpy()
+shares_data_wide = shares_data_long.reshape(100,3)
+prices_data_wide = prices_data_long.reshape(100,3)
+x_data_3d = x_data_long.reshape(100, 3, 3)
+blp_data = blp_instruments(x_data_3d) 
+hausman_data = hausman_instruments(prices_data_wide)
+z_data = np.concatenate([blp_data, hausman_data.reshape(-1,1)], axis=1)
+np.random.seed(456)
+random_vs = np.random.lognormal(0, 1, 1000)
+
+# ESTIMATING PARAMETERS
+
+theta_2_0 = np.array([.1]) 
+delta_0 = inner_loop(theta_2_0, logit_delta(shares_data_wide).reshape(100, 3), shares_data_wide, prices_data_wide, random_vs)
+dat[["delta_0"]] = delta_0.reshape(-1,1)
+beta, alpha, sigma_alpha, delta_hat = full_mpec_wrapper(theta_2_0, dat, z_data, random_vs, 100, 3)
+
+# RECOVERING ANALYTIC SEs
+beta_alpha_se, sigma_alpha_se = standard_errors(sigma_alpha, delta_hat, z_data, prices_data_wide, x_data_long, x_data_3d, random_vs)
+print("Results(100X3, BLP and Hausman Instruments)")
+results = [["beta_1", beta[0], beta_alpha_se[0]], 
+           ["beta_2", beta[1], beta_alpha_se[1]], 
+           ["beta_3", beta[2], beta_alpha_se[2]], 
+           ["-alpha", alpha, beta_alpha_se[3]], 
+           ["sigma_alpha", sigma_alpha, sigma_alpha_se]]
+headers = ["estimates", "standard errors"]
+print(tabulate(results, headers, tablefmt="plain"))
+```
