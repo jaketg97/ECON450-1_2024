@@ -1,6 +1,6 @@
 ---
 title: "TA Session 3"
-subtitle: "Production function estimation in PSET3"
+subtitle: "Demand estimation for PSET4"
 format:
   revealjs: 
     slide-number: true
@@ -235,7 +235,7 @@ The gradient is given by:
    0 & \frac{1}{JT} (A \cdot Z)' & -I
    \end{bmatrix}
    $$
-   - **Note:** The Jacobian rows depend on the order of the constraints supplied to the solver, while the columns depend on the order of the parameters.
+   - **Note:** The Jacobian rows depend on the order of the constraints supplied to the solver, while the columns depend on the order of the parameters. Also note that this is just for demand estimation, not joint as in 3.2.c.
    - $Z$ refers to the matrix of instruments or functions of instruments $f(z)$ you decide to use.
 
 ## Gradient and Jacobian cont.

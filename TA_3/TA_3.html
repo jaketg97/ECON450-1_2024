@@ -1218,7 +1218,7 @@ margin-right: 0; }
 
 <section id="title-slide" class="quarto-title-block center">
   <h1 class="title">TA Session 3</h1>
-  <p class="subtitle">Production function estimation in PSET3</p>
+  <p class="subtitle">Demand estimation for PSET4</p>
 
 <div class="quarto-title-authors">
 </div>
@@ -1419,7 +1419,7 @@ s(\delta, \theta_2) - s = 0
 \end{bmatrix}
 \]</span>
 <ul>
-<li><strong>Note:</strong> The Jacobian rows depend on the order of the constraints supplied to the solver, while the columns depend on the order of the parameters.</li>
+<li><strong>Note:</strong> The Jacobian rows depend on the order of the constraints supplied to the solver, while the columns depend on the order of the parameters. Also note that this is just for demand estimation, not joint as in 3.2.c.</li>
 <li><span class="math inline">\(Z\)</span> refers to the matrix of instruments or functions of instruments <span class="math inline">\(f(z)\)</span> you decide to use.</li>
 </ul></li>
 </ol>
@@ -1514,7 +1514,7 @@ f(z_{jt}) \cdot \frac{\partial (p_{jt} - b_{jt}(\theta_2) - w_{jt} \gamma)}{\par
 </section>
 <section id="shares-calculation-1" class="slide level2">
 <h2>Shares Calculation</h2>
-<div id="d8eb3dcc" class="cell" data-execution_count="1">
+<div id="69ba8cbf" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href></a><span class="co"># Pre-question, loading libraries and data</span></span>
 <span id="cb1-2"><a href></a><span class="im">from</span> scipy.io <span class="im">import</span> loadmat</span>
 <span id="cb1-3"><a href></a><span class="im">import</span> jaxopt <span class="im">as</span> jaxopt</span>
@@ -1541,7 +1541,7 @@ f(z_{jt}) \cdot \frac{\partial (p_{jt} - b_{jt}(\theta_2) - w_{jt} \gamma)}{\par
 
 </section>
 <section id="shares-calculation-1-output" class="slide level2 output-location-slide"><h2>Shares Calculation</h2><div class="cell output-location-slide" data-execution_count="1">
-<div class="cell-output cell-output-display" data-execution_count="10">
+<div class="cell-output cell-output-display" data-execution_count="4">
 <pre><code>array([5.18797590e-05, 7.18442824e-01, 1.19751055e-01, 9.31664267e-02,
        1.38094029e-01, 6.98379743e-01, 1.85344063e-01, 1.55223378e-01,
        5.41569399e-01, 4.93876392e-03, 5.94509066e-01, 1.10732940e-01,
@@ -1630,7 +1630,7 @@ f(z_{jt}) \cdot \frac{\partial (p_{jt} - b_{jt}(\theta_2) - w_{jt} \gamma)}{\par
 </section>
 <section id="moments-calculation-1" class="slide level2">
 <h2>Moments Calculation</h2>
-<div id="a015508e" class="cell" data-execution_count="2">
+<div id="9cf92dd0" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href></a><span class="co"># Pre-question, loading libraries and data</span></span>
 <span id="cb3-2"><a href></a><span class="im">from</span> scipy.io <span class="im">import</span> loadmat</span>
 <span id="cb3-3"><a href></a><span class="im">import</span> jaxopt <span class="im">as</span> jaxopt</span>
@@ -1666,7 +1666,7 @@ f(z_{jt}) \cdot \frac{\partial (p_{jt} - b_{jt}(\theta_2) - w_{jt} \gamma)}{\par
 
 </section>
 <section id="moments-calculation-1-output" class="slide level2 output-location-slide"><h2>Moments Calculation</h2><div class="cell output-location-slide" data-execution_count="2">
-<div class="cell-output cell-output-display" data-execution_count="11">
+<div class="cell-output cell-output-display" data-execution_count="5">
 <pre><code>array([ 3.38448421e-13,  4.86119513e-14, -5.88471608e-14, -8.07202359e+00,
        -1.10457438e+02, -1.29870825e+01])</code></pre>
 </div>
@@ -1686,7 +1686,7 @@ f(z_{jt}) \cdot \frac{\partial (p_{jt} - b_{jt}(\theta_2) - w_{jt} \gamma)}{\par
 </section>
 <section id="putting-it-all-together-1" class="slide level2">
 <h2>Putting it all together</h2>
-<div id="1cbdefba" class="cell" data-execution_count="3">
+<div id="6ed49fe4" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href></a><span class="co"># Pre-question, loading libraries and data</span></span>
 <span id="cb5-2"><a href></a><span class="im">from</span> scipy.io <span class="im">import</span> loadmat</span>
 <span id="cb5-3"><a href></a><span class="im">import</span> jaxopt <span class="im">as</span> jaxopt</span>
