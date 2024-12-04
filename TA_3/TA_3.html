@@ -1269,7 +1269,7 @@ u_{ijt} = \beta_i x_{jt} + \alpha_i p_{jt} + \xi_{jt} + \epsilon_{ijt}
 <h2>Rewriting the Indirect Utility</h2>
 <p>Rewriting gives:</p>
 <p><span class="math display">\[
-u_{ijt} = \beta_0 x_{jt} + \sum \beta_\nu \beta_i x_{jt} + \alpha_0 p_{jt} + \sigma \alpha_\nu \alpha_i p_{jt} + \xi_{jt} + \epsilon_{ijt}
+u_{ijt} = \beta_0 x_{jt} + \sum \sigma_{\beta_j} \nu^\beta_i x_{jt} + \alpha_0 p_{jt} + \sigma_\alpha \nu^\alpha_i p_{jt} + \xi_{jt} + \epsilon_{ijt}
 \]</span></p>
 <p>This can be expressed as:</p>
 <p><span class="math display">\[
@@ -1278,7 +1278,7 @@ u_{ijt} = \delta_{jt} + \mu_{ijt} + \epsilon_{ijt}
 <p>Where:</p>
 <ul>
 <li><span class="math inline">\(\delta_{jt} = \beta_0 x_{jt} + \alpha_0 p_{jt} + \xi_{jt}\)</span></li>
-<li><span class="math inline">\(\mu_{ijt} = \sum \sigma_\beta \nu_\beta x_{jt}\)</span></li>
+<li><span class="math inline">\(\mu_{ijt} = \sum \sigma \nu^\beta_i x_{jt}\)</span></li>
 </ul>
 </section>
 <section id="market-shares" class="slide level2">
@@ -1338,6 +1338,62 @@ s(\delta, \theta_2) - s = 0, \quad \bar{g}_n(\delta) - \eta = 0
 s_{jt}(\delta_{jt}, \theta_2) \approx \frac{1}{I} \sum_{i=1}^{I} \frac{e^{\delta_{jt} + \mu_{ijt}}}{1 + \sum_k e^{\delta_{kt} + \mu_{ikt}}}
 \]</span></p>
 <p>For improved simulation, consider importance sampling <strong>(not necessary for the problem set)</strong>.</p>
+</section>
+<section id="adding-a-supply-side-1" class="slide level2">
+<h2>Adding a supply side (1)</h2>
+<p>Consider the profits of firm <span class="math inline">\(f\)</span>, which for a single market <span class="math inline">\(t\)</span> controls several products <span class="math inline">\(J_{ft}\)</span> and sets prices <span class="math inline">\(p_{jt}\)</span> (<span class="math inline">\(M\)</span> is market size).</p>
+<p><span class="math display">\[
+\max_{p_{jt} : j \in J_{ft}} \sum_{j \in J_{ft}} M \cdot s_{jt}(p_t) \cdot (p_{jt} - c_{jt}),
+\]</span></p>
+<p>Taking first order conditions we get:</p>
+<p><span class="math display">\[
+s_{jt}(p_t) + \sum_{k \in J_{ft}} \frac{\partial s_{kt}}{\partial p_{jt}}(p_t) \cdot (p_{kt} - c_{kt}) = 0
+\]</span></p>
+<p>In matrix form, for a single market <span class="math inline">\(t\)</span>, we have:</p>
+<p><span class="math display">\[
+\mathbb{s_t(p_t) = \Delta_t(p_t) \cdot (p_t - c_t) \implies \Delta_t(p_t)^{-1} s_t(p_t)} := b(\mathbb{p_t, s_t,} \theta_2) = \mathbb{p_t - c_t}
+\]</span></p>
+<p>where the markup <span class="math inline">\(= p_t - c_t\)</span>.</p>
+</section>
+<section id="adding-a-supply-side-2" class="slide level2">
+<h2>Adding a supply side (2)</h2>
+<p>The multi-product Bertrand markup <span class="math inline">\(b(\mathbb{p_t, s_t}, \theta_2)\)</span> depends on <span class="math inline">\(\Delta_t(\mathbb{p_t, s_t}, \theta_2)\)</span>, a <span class="math inline">\(J_t \times J_t\)</span> matrix of intra-firm demand derivatives given by:</p>
+<p><span class="math display">\[
+\Delta_t(\mathbb{p_t}) \equiv -H_t \odot \mathbb{\frac{\partial s_t}{\partial p_t}(p_t)}
+\]</span></p>
+<p>which is the element-wise Hadamard product of two <span class="math inline">\(J_t \times J_t\)</span> matrices: the matrix of demand derivatives with each <span class="math inline">\((j,k)\)</span> entry given by <span class="math inline">\(\frac{\partial s_{jt}}{\partial p_{kt}}\)</span> and the ownership matrix <span class="math inline">\(H_t\)</span> with each <span class="math inline">\((j,k)\)</span> entry indicating whether the same firm produces products <span class="math inline">\(j\)</span> and <span class="math inline">\(k\)</span>.</p>
+<p>Note: In <span class="math inline">\(H_t\)</span>, each <span class="math inline">\((j,k)\)</span> entry equals 1 if both <span class="math inline">\(j, k \in J_{ft}\)</span> for some <span class="math inline">\(f \in F_t\)</span>, and equals 0 otherwise.</p>
+<p>We can easily consider alternative forms of conduct such as Single- or Multi-Product Oligopoly, or Monopoly (Question 3, part 2 of the Problem Set).</p>
+</section>
+<section id="adding-a-supply-side-3" class="slide level2">
+<h2>Adding a supply side (3)</h2>
+<p>Marginal costs can be parametrized. In BLP:</p>
+<p><span class="math display">\[
+\ln(mc_{jt}) = w_{jt} \gamma + \omega_{jt}.
+\]</span></p>
+<p>Logarithm ensures positive marginal costs. But we know that <span class="math inline">\(mc_{jt} = p_{jt} - b_{jt}(\mathbb{p_t, s_t}, \theta_2)\)</span>. Then</p>
+<p><span class="math display">\[
+\ln(p_{jt} - b_{jt}(\mathbb{p_t, s_t}, \theta_2)) = w_{jt} \gamma + \omega_{jt} \implies \omega_{jt} = \ln(p_{jt} - b_{jt}(\mathbb{p_t, s_t}, \theta_2)) - w_{jt} \gamma
+\]</span></p>
+<p>So now, we can add moment conditions of the form:</p>
+<p><span class="math display">\[
+E[f(z^s) \cdot \omega] = 0
+\]</span></p>
+</section>
+<section id="the-problem-to-solve" class="slide level2">
+<h2>The problem to solve</h2>
+<p>The problem to solve would then be:</p>
+<p><span class="math display">\[
+\min_{\theta_2, \delta, \eta} \eta&#39; W \eta
+\]</span></p>
+<p>subject to:</p>
+<p><span class="math display">\[
+s(\delta, \theta_2) - s = 0
+\]</span></p>
+<p><span class="math display">\[
+\bar{g}_n(\theta) - \eta = 0 \text{ with } \bar{g}_n(\theta) = \left[ \frac{1}{JT} \sum_{j,t} f(z_{jt}) \cdot \xi_{jt}, \frac{1}{JT} \sum_{j,t} f(z_{jt}) \cdot \omega_{jt} \right]
+\]</span></p>
+<p>When estimating jointly (3.2.c), <span class="math inline">\(\theta_2 \rightarrow \theta^{joint} = [\theta_2, \gamma]\)</span></p>
 </section></section>
 <section>
 <section id="implementation" class="title-slide slide level1 center">
@@ -1378,6 +1434,7 @@ s_{jt}(\delta_{jt}, \theta_2) \approx \frac{1}{I} \sum_{i=1}^{I} \frac{e^{\delta
 A = I - \bar{X} \cdot (\bar{X}&#39; \cdot P_z \cdot \bar{X})^{-1} \cdot \bar{X} \cdot P_z
 \]</span></li>
 <li>Where <span class="math inline">\(\bar{X} = [x, p]\)</span> and <span class="math inline">\(P_z = Z \cdot (Z&#39; \cdot Z)^{-1} \cdot Z\)</span>.</li>
+<li><strong>NOTE: This Jacobian is for demand parameters only, not joint estimation as in 3.2.c</strong>.</li>
 </ul></li>
 </ol>
 </section>
@@ -1411,11 +1468,24 @@ V_{\text{GMM}} = [G&#39; G]^{-1} G&#39; \bar{B} G [G&#39; G]^{-1}
 \]</span></p></li>
 <li><p>Note that <span class="math inline">\(\delta\)</span> depends on <span class="math inline">\(\theta_2\)</span> through the share matching constraint: <span class="math inline">\(= f(z_{jt}) \cdot \frac{\partial s_{jt}}{\partial \delta}^{-1} \cdot \frac{\partial s_{jt}}{\partial \theta_2}\)</span> (By the Implicit Function Theorem.)</p></li>
 </ul>
-</section></section>
-<section>
-<section id="my-version" class="title-slide slide level1 center">
-<h1>My version</h1>
-
+</section>
+<section id="recover-analytic-standard-errors-cont." class="slide level2">
+<h2>Recover analytic standard errors cont.</h2>
+<p>For the supply side moments we have:</p>
+<p><span class="math display">\[
+\frac{\partial g(\theta)}{\partial \theta} = \frac{\partial f(z_{jt}) \cdot \omega_{jt}}{\partial \theta_2},
+\]</span></p>
+<p>since we solve for <span class="math inline">\(\theta_2\)</span> in MPEC:</p>
+<p><span class="math display">\[
+f(z_{jt}) \cdot \frac{\partial (p_{jt} - b_{jt}(\theta_2) - w_{jt} \gamma)}{\partial \theta_2} = f(z_{jt}) \cdot - \frac{\partial b_{jt}(\theta_2)}{\partial \theta_2}
+\]</span></p>
+<p>where (if <span class="math inline">\(\theta_2\)</span> is not a vector, but a parameter like in the problem set):</p>
+<p><span class="math display">\[
+\frac{\partial b(\theta_2)}{\partial \theta_2} = \frac{\partial \Delta_t(\mathbb{p_t})^{-1}}{\partial \theta_2} \mathbb{s_t(p_t)} + \Delta_t(\mathbb{p_t})^{-1} \frac{\partial \mathbb{s_t(p_t)}}{\partial \theta_2}
+\]</span></p>
+<p><span class="math display">\[
+= -\Delta^{-1} \frac{\partial \Delta}{\partial \theta_2} \Delta^{-1} \mathbb{s_t(p_t)} + \Delta_t(\mathbb{p_t})^{-1} \frac{\partial \mathbb{s_t(p_t)}}{\partial \theta_2}
+\]</span> # My version</p>
 </section>
 <section id="preview" class="slide level2">
 <h2>Preview</h2>
@@ -1444,7 +1514,7 @@ V_{\text{GMM}} = [G&#39; G]^{-1} G&#39; \bar{B} G [G&#39; G]^{-1}
 </section>
 <section id="shares-calculation-1" class="slide level2">
 <h2>Shares Calculation</h2>
-<div id="8b46b28b" class="cell" data-execution_count="1">
+<div id="d8eb3dcc" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href></a><span class="co"># Pre-question, loading libraries and data</span></span>
 <span id="cb1-2"><a href></a><span class="im">from</span> scipy.io <span class="im">import</span> loadmat</span>
 <span id="cb1-3"><a href></a><span class="im">import</span> jaxopt <span class="im">as</span> jaxopt</span>
@@ -1471,7 +1541,7 @@ V_{\text{GMM}} = [G&#39; G]^{-1} G&#39; \bar{B} G [G&#39; G]^{-1}
 
 </section>
 <section id="shares-calculation-1-output" class="slide level2 output-location-slide"><h2>Shares Calculation</h2><div class="cell output-location-slide" data-execution_count="1">
-<div class="cell-output cell-output-display" data-execution_count="34">
+<div class="cell-output cell-output-display" data-execution_count="10">
 <pre><code>array([5.18797590e-05, 7.18442824e-01, 1.19751055e-01, 9.31664267e-02,
        1.38094029e-01, 6.98379743e-01, 1.85344063e-01, 1.55223378e-01,
        5.41569399e-01, 4.93876392e-03, 5.94509066e-01, 1.10732940e-01,
@@ -1560,7 +1630,7 @@ V_{\text{GMM}} = [G&#39; G]^{-1} G&#39; \bar{B} G [G&#39; G]^{-1}
 </section>
 <section id="moments-calculation-1" class="slide level2">
 <h2>Moments Calculation</h2>
-<div id="2ae75267" class="cell" data-execution_count="2">
+<div id="a015508e" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href></a><span class="co"># Pre-question, loading libraries and data</span></span>
 <span id="cb3-2"><a href></a><span class="im">from</span> scipy.io <span class="im">import</span> loadmat</span>
 <span id="cb3-3"><a href></a><span class="im">import</span> jaxopt <span class="im">as</span> jaxopt</span>
@@ -1596,7 +1666,7 @@ V_{\text{GMM}} = [G&#39; G]^{-1} G&#39; \bar{B} G [G&#39; G]^{-1}
 
 </section>
 <section id="moments-calculation-1-output" class="slide level2 output-location-slide"><h2>Moments Calculation</h2><div class="cell output-location-slide" data-execution_count="2">
-<div class="cell-output cell-output-display" data-execution_count="35">
+<div class="cell-output cell-output-display" data-execution_count="11">
 <pre><code>array([ 3.38448421e-13,  4.86119513e-14, -5.88471608e-14, -8.07202359e+00,
        -1.10457438e+02, -1.29870825e+01])</code></pre>
 </div>
@@ -1616,7 +1686,7 @@ V_{\text{GMM}} = [G&#39; G]^{-1} G&#39; \bar{B} G [G&#39; G]^{-1}
 </section>
 <section id="putting-it-all-together-1" class="slide level2">
 <h2>Putting it all together</h2>
-<div id="aa21d82d" class="cell" data-execution_count="3">
+<div id="1cbdefba" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href></a><span class="co"># Pre-question, loading libraries and data</span></span>
 <span id="cb5-2"><a href></a><span class="im">from</span> scipy.io <span class="im">import</span> loadmat</span>
 <span id="cb5-3"><a href></a><span class="im">import</span> jaxopt <span class="im">as</span> jaxopt</span>
